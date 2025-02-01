@@ -1,10 +1,11 @@
 "use client"; // Mark as a Client Component
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { recognizeSong } from "../lib/audd";
-import { addToSpotify } from "../lib/spotify";
+import { addToSpotify, getAuthorizationUrl } from "../lib/spotify";
 import { ClipLoader } from "react-spinners"; // Import a spinner
 import { FaCheckCircle } from "react-icons/fa"; // Import a check mark icon
+import { useUser } from "@clerk/nextjs";
 
 export default function Home() {
   const [isListening, setIsListening] = useState(false);
@@ -13,10 +14,15 @@ export default function Home() {
     title: string;
     artist: string;
   } | null>(null);
+  const { isSignedIn, user } = useUser();
 
-  useEffect(() => {
-    console.log("is listening: ", isListening);
-  }, [isListening]);
+  if (!isSignedIn) {
+    return <p>Please sign in to use the app.</p>;
+  }
+
+  // useEffect(() => {
+  //   console.log("is listening: ", isListening);
+  // }, [isListening]);
 
   const startListening = async () => {
     setIsListening(true);
@@ -67,7 +73,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="text-3xl font-bold mb-4">Song Recognizer</h1>
+      <h1>Welcome, {user.firstName}!</h1>
+      <button
+        onClick={() => (window.location.href = getAuthorizationUrl())}
+        className="px-6 py-2 bg-green-500 text-white rounded-lg"
+      >
+        Connect Spotify
+      </button>
       {isListening ? (
         <div className="flex flex-col items-center">
           <ClipLoader color="#3b82f6" size={40} /> {/* Loading spinner */}

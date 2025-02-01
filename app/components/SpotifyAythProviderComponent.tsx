@@ -3,7 +3,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { initializeSpotifyAuth } from "../../lib/spotify";
+// import { initializeSpotifyAuth } from "../../lib/spotify";
 
 export default function SpotifyAuthProvider({
   children,
@@ -16,7 +16,7 @@ export default function SpotifyAuthProvider({
     // Don't initialize on the callback page to avoid redirect loops
     if (pathname !== "/callback") {
       try {
-        initializeSpotifyAuth();
+        // initializeSpotifyAuth();
       } catch (error) {
         console.error("Failed to initialize Spotify auth:", error);
       }
