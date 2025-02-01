@@ -8,14 +8,22 @@ import { FaCheckCircle } from "react-icons/fa";
 import { useUser } from "@clerk/nextjs";
 import { useSpotify } from "./hooks/useSpotify";
 
+interface SongDetails {
+  title: string;
+  artist: string;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+}
+
 export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [songDetails, setSongDetails] = useState<{
-    title: string;
-    artist: string;
-  } | null>(null);
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [songDetails, setSongDetails] = useState<SongDetails | null>(null);
+
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
   const { isSignedIn, user } = useUser();
 
@@ -34,16 +42,13 @@ export default function Home() {
       }
     };
     fetchPlaylists();
-  }, [spotifyAccessToken]);
+  }, [getUserPlaylists, spotifyAccessToken]);
 
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
   }
 
-  const handleAddToSpotify = async (songData: {
-    artist: string;
-    title: string;
-  }) => {
+  const handleAddToSpotify = async (songData: SongDetails) => {
     if (selectedPlaylist) {
       await addToSpotify(songData, spotifyAccessToken, selectedPlaylist);
     }
@@ -63,7 +68,7 @@ export default function Home() {
       const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.ondataavailable = (e: BlobEvent) => chunks.push(e.data);
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "audio/wav" });
 
