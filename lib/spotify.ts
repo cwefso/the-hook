@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
@@ -35,6 +34,7 @@ export const exchangeCodeForToken = async (code: string) => {
   const redirectUri = `${window.location.origin}/callback/spotify/`;
   console.log("code:", code);
   console.log("redirectUri:", redirectUri);
+
   try {
     const response = await axios.post(
       "https://accounts.spotify.com/api/token",
@@ -51,8 +51,16 @@ export const exchangeCodeForToken = async (code: string) => {
         },
       }
     );
-
     if (response.data.access_token) {
+      localStorage.setItem("spotifyAccessToken", response.data.access_token);
+      // Some implementations also provide a new refresh token
+      if (response.data.refresh_token) {
+        localStorage.setItem(
+          "spotifyRefreshToken",
+          response.data.refresh_token
+        );
+      }
+
       return response.data.access_token;
     } else {
       throw new Error("Invalid token response");
@@ -70,6 +78,7 @@ export const exchangeCodeForToken = async (code: string) => {
 // Refresh the access token using the refresh token
 export const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("spotifyRefreshToken");
+
   if (!refreshToken) {
     // If no refresh token exists, start the auth flow again
     throw new Error("No refresh token found. Starting authentication flow.");
@@ -90,7 +99,7 @@ export const refreshAccessToken = async () => {
         },
       }
     );
-
+    console.log("response", response);
     if (response.data.access_token) {
       localStorage.setItem("spotifyAccessToken", response.data.access_token);
       // Some implementations also provide a new refresh token
@@ -100,6 +109,7 @@ export const refreshAccessToken = async () => {
           response.data.refresh_token
         );
       }
+
       return response.data.access_token;
     } else {
       throw new Error("Invalid token response");
@@ -120,6 +130,7 @@ export const searchSpotifyTrack = async (
   spotifyAccessToken: {}
 ) => {
   const accessToken = spotifyAccessToken;
+
   if (!accessToken) {
     // Initialize auth if no access token exists
     throw new Error("No access token found. Starting authentication flow.");
@@ -146,55 +157,5 @@ export const searchSpotifyTrack = async (
   } catch (error) {
     console.error("Error searching for track on Spotify:", error);
     throw error;
-  }
-};
-
-// Add a track to a Spotify playlist
-export const addToSpotify = async (songData: {
-  artist: string;
-  title: string;
-}) => {
-  const { user } = useUser();
-
-  // Store Spotify token
-  user?.update({
-    unsafeMetadata: {
-      spotifyAccessToken: "user_spotify_token",
-    },
-  });
-
-  // Retrieve Spotify token
-  const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken;
-
-  if (!spotifyAccessToken) {
-    console.error("No Spotify access token found.");
-    return;
-  }
-
-  try {
-    const trackUri = await searchSpotifyTrack(
-      songData.artist,
-      songData.title,
-      spotifyAccessToken
-    );
-    if (!trackUri) {
-      throw new Error("Track not found on Spotify.");
-    }
-    const playlistId = "0qiJyAxESNqy4AynkpHerX";
-    await axios.post(
-      `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-      { uris: [trackUri] },
-      {
-        headers: {
-          Authorization: `Bearer ${spotifyAccessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    alert("Song added to Spotify playlist!");
-  } catch (error) {
-    console.error("Error adding song to Spotify playlist:", error);
-    alert("Failed to add song to Spotify playlist.");
   }
 };

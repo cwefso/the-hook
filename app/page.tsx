@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { recognizeSong } from "../lib/audd";
-import { addToSpotify, getAuthorizationUrl } from "../lib/spotify";
+import { getAuthorizationUrl } from "../lib/spotify";
 import { ClipLoader } from "react-spinners"; // Import a spinner
 import { FaCheckCircle } from "react-icons/fa"; // Import a check mark icon
 import { useUser } from "@clerk/nextjs";
+import { useSpotify } from "./hooks/useSpotify";
 
 export default function Home() {
   const [isListening, setIsListening] = useState(false);
@@ -23,6 +24,16 @@ export default function Home() {
   // useEffect(() => {
   //   console.log("is listening: ", isListening);
   // }, [isListening]);
+
+  const { addToSpotify } = useSpotify();
+  const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
+
+  const handleAddToSpotify = async (songData: {
+    artist: string;
+    title: string;
+  }) => {
+    await addToSpotify(songData, spotifyAccessToken);
+  };
 
   const startListening = async () => {
     setIsListening(true);
@@ -49,7 +60,7 @@ export default function Home() {
         if (songData && songData.result) {
           const { title, artist } = songData.result;
           console.log(`Song Recognized: ${title} by ${artist}`);
-          await addToSpotify(songData.result);
+          await handleAddToSpotify(songData.result);
           setSongDetails({ title, artist }); // Set song details
           setIsSuccess(true); // Set success state
           setTimeout(() => {
