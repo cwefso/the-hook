@@ -1,10 +1,10 @@
-"use client"; // Mark as a Client Component
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { recognizeSong } from "../lib/audd";
 import { getAuthorizationUrl } from "../lib/spotify";
-import { ClipLoader } from "react-spinners"; // Import a spinner
-import { FaCheckCircle } from "react-icons/fa"; // Import a check mark icon
+import { ClipLoader } from "react-spinners";
+import { FaCheckCircle } from "react-icons/fa";
 import { useUser } from "@clerk/nextjs";
 import { useSpotify } from "./hooks/useSpotify";
 
@@ -15,38 +15,50 @@ export default function Home() {
     title: string;
     artist: string;
   } | null>(null);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
   const { isSignedIn, user } = useUser();
 
-  const { addToSpotify } = useSpotify();
+  const { addToSpotify, getUserPlaylists } = useSpotify();
+
+  const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      if (spotifyAccessToken) {
+        const userPlaylists = await getUserPlaylists(spotifyAccessToken);
+        setPlaylists(userPlaylists);
+        if (userPlaylists.length > 0) {
+          setSelectedPlaylist(userPlaylists[0].id);
+        }
+      }
+    };
+    fetchPlaylists();
+  }, [spotifyAccessToken]);
 
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
   }
 
-  // useEffect(() => {
-  //   console.log("is listening: ", isListening);
-  // }, [isListening]);
-  const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
-
   const handleAddToSpotify = async (songData: {
     artist: string;
     title: string;
   }) => {
-    await addToSpotify(songData, spotifyAccessToken);
+    if (selectedPlaylist) {
+      await addToSpotify(songData, spotifyAccessToken, selectedPlaylist);
+    }
   };
 
   const startListening = async () => {
     setIsListening(true);
 
     try {
-      // Check for browser support
       if (!navigator.mediaDevices || !window.MediaRecorder) {
         console.log("Your browser does not support audio recording.");
-        setIsListening(false); // Reset state if recording is not supported
+        setIsListening(false);
         return;
       }
 
-      // Record audio using the Web Audio API
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
@@ -55,51 +67,66 @@ export default function Home() {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "audio/wav" });
 
-        // Send audio to AudD API
         const songData = await recognizeSong(blob);
         if (songData && songData.result) {
           const { title, artist } = songData.result;
           console.log(`Song Recognized: ${title} by ${artist}`);
           await handleAddToSpotify(songData.result);
-          setSongDetails({ title, artist }); // Set song details
-          setIsSuccess(true); // Set success state
+          setSongDetails({ title, artist });
+          setIsSuccess(true);
           setTimeout(() => {
             setIsSuccess(false);
-            setSongDetails(null); // Reset song details after 3 seconds
-          }, 3000); // Reset after 3 seconds
+            setSongDetails(null);
+          }, 3000);
         } else {
           console.log("No song recognized.");
         }
-        setIsListening(false); // Reset state after processing is complete
+        setIsListening(false);
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 10000); // Record for 10 seconds
+      setTimeout(() => mediaRecorder.stop(), 10000);
     } catch (error) {
       console.error("Error recording audio:", error);
       console.log("Failed to record audio.");
-      setIsListening(false); // Reset state on error
+      setIsListening(false);
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1>Welcome, {user.firstName}!</h1>
-      <button
-        onClick={() => (window.location.href = getAuthorizationUrl())}
-        className="px-6 py-2 bg-green-500 text-white rounded-lg"
-      >
-        Connect Spotify
-      </button>
+      {!spotifyAccessToken && (
+        <button
+          onClick={() => (window.location.href = getAuthorizationUrl())}
+          className="px-6 py-2 bg-green-500 text-white rounded-lg"
+        >
+          Connect Spotify
+        </button>
+      )}
+      {spotifyAccessToken && playlists.length > 0 && (
+        <>
+          <h1>Select your playlist</h1>
+          <select
+            value={selectedPlaylist}
+            onChange={(e) => setSelectedPlaylist(e.target.value)}
+            className="px-4 py-2 border rounded-md my-2 text-black w-[25%]"
+          >
+            {playlists.map((playlist) => (
+              <option key={playlist.id} value={playlist.id}>
+                {playlist.name}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
       {isListening ? (
         <div className="flex flex-col items-center">
-          <ClipLoader color="#3b82f6" size={40} /> {/* Loading spinner */}
+          <ClipLoader color="#3b82f6" size={40} />
           <p className="mt-2">Listening...</p>
         </div>
       ) : isSuccess ? (
         <div className="flex flex-col items-center">
-          <FaCheckCircle className="text-green-500 text-4xl" />{" "}
-          {/* Green check mark */}
+          <FaCheckCircle className="text-green-500 text-4xl" />
           <p className="mt-2">Song added to playlist!</p>
           {songDetails && (
             <p className="mt-2 text-center">

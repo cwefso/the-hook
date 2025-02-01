@@ -32,45 +32,27 @@ export const getAuthorizationUrl = () => {
 // Initialize Spotify authentication
 export const exchangeCodeForToken = async (code: string) => {
   const redirectUri = `${window.location.origin}/callback/spotify/`;
-  console.log("code:", code);
-  console.log("redirectUri:", redirectUri);
 
   try {
-    const response = await axios.post(
-      "https://accounts.spotify.com/api/token",
-      new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: SPOTIFY_CLIENT_ID,
-        client_secret: SPOTIFY_CLIENT_SECRET,
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-    if (response.data.access_token) {
-      localStorage.setItem("spotifyAccessToken", response.data.access_token);
-      // Some implementations also provide a new refresh token
-      if (response.data.refresh_token) {
-        localStorage.setItem(
-          "spotifyRefreshToken",
-          response.data.refresh_token
-        );
-      }
+    const response = await fetch("/api/spotify/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, redirectUri }),
+    });
 
-      return response.data.access_token;
+    const data = await response.json();
+
+    if (data.access_token) {
+      localStorage.setItem("spotifyAccessToken", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("spotifyRefreshToken", data.refresh_token);
+      }
+      return data.access_token;
     } else {
       throw new Error("Invalid token response");
     }
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error("Spotify API Error:", error.response?.data);
-    } else {
-      console.error("Error exchanging code for token:", error);
-    }
+    console.error("Error exchanging code for token:", error);
     throw error;
   }
 };

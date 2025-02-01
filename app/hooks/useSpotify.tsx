@@ -4,7 +4,8 @@ import { searchSpotifyTrack } from "lib/spotify";
 export const useSpotify = () => {
   const addToSpotify = async (
     songData: { artist: string; title: string },
-    spotifyAccessToken: string
+    spotifyAccessToken: string,
+    playlistId: string
   ) => {
     if (!spotifyAccessToken) {
       console.error("No Spotify access token found.");
@@ -20,7 +21,7 @@ export const useSpotify = () => {
       if (!trackUri) {
         throw new Error("Track not found on Spotify.");
       }
-      const playlistId = "0qiJyAxESNqy4AynkpHerX";
+
       await axios.post(
         `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
         { uris: [trackUri] },
@@ -32,12 +33,29 @@ export const useSpotify = () => {
         }
       );
 
-      alert("Song added to Spotify playlist!");
+      console.log("Song added to Spotify playlist!");
     } catch (error) {
       console.error("Error adding song to Spotify playlist:", error);
-      alert("Failed to add song to Spotify playlist.");
+      console.log("Failed to add song to Spotify playlist.");
     }
   };
 
-  return { addToSpotify };
+  const getUserPlaylists = async (spotifyAccessToken: string) => {
+    try {
+      const response = await axios.get(
+        "https://api.spotify.com/v1/me/playlists",
+        {
+          headers: {
+            Authorization: `Bearer ${spotifyAccessToken}`,
+          },
+        }
+      );
+      return response.data.items;
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+      return [];
+    }
+  };
+
+  return { addToSpotify, getUserPlaylists };
 };
