@@ -1,12 +1,3 @@
-// Types for environment variables
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_AUDD_API_KEY: string;
-    }
-  }
-}
-
 if (!process.env.NEXT_PUBLIC_AUDD_API_KEY) {
   throw new Error("Missing AUDD_API_KEY environment variable");
 }

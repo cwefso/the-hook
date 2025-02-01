@@ -127,7 +127,7 @@ export const refreshAccessToken = async () => {
 export const searchSpotifyTrack = async (
   artist: string,
   title: string,
-  spotifyAccessToken: {}
+  spotifyAccessToken: unknown
 ) => {
   const accessToken = spotifyAccessToken;
 

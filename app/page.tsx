@@ -17,6 +17,8 @@ export default function Home() {
   } | null>(null);
   const { isSignedIn, user } = useUser();
 
+  const { addToSpotify } = useSpotify();
+
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
   }
@@ -24,8 +26,6 @@ export default function Home() {
   // useEffect(() => {
   //   console.log("is listening: ", isListening);
   // }, [isListening]);
-
-  const { addToSpotify } = useSpotify();
   const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
 
   const handleAddToSpotify = async (songData: {
