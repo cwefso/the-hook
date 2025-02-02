@@ -81,7 +81,8 @@ export const useSpotify = () => {
                 spotifyRefeshToken
               );
               await attemptAddTrack(newAccessToken); // Retry with the new token
-            } catch (refreshError) {
+            } catch (error) {
+              console.log(error);
               throw new Error("Session expired. Please log in again.");
             }
           } else {
@@ -92,7 +93,7 @@ export const useSpotify = () => {
         }
       }
     },
-    []
+    [refreshAccessToken]
   );
 
   const getUserPlaylists = useCallback(
