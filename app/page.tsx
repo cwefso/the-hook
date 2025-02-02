@@ -32,20 +32,22 @@ export default function Home() {
   const refreshToken = user?.unsafeMetadata.spotifyRefreshToken as string;
 
   useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        const playlists = await getUserPlaylists(
-          spotifyAccessToken,
-          refreshToken
-        );
-        setPlaylists(playlists);
-      } catch (error) {
-        console.error("Failed to fetch playlists:", error);
-      }
-    };
+    if (isSignedIn) {
+      const fetchPlaylists = async () => {
+        try {
+          const playlists = await getUserPlaylists(
+            spotifyAccessToken,
+            refreshToken
+          );
+          setPlaylists(playlists);
+        } catch (error) {
+          console.error("Failed to fetch playlists:", error);
+        }
+      };
 
-    fetchPlaylists();
-  }, [getUserPlaylists, spotifyAccessToken, refreshToken]);
+      fetchPlaylists();
+    }
+  }, [getUserPlaylists, spotifyAccessToken, refreshToken, isSignedIn]);
 
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
