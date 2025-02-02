@@ -29,7 +29,8 @@ export default function Home() {
   const { addToSpotify, getUserPlaylists } = useSpotify();
 
   const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
-  const refreshToken = user?.unsafeMetadata.spotifyRefreshToken as string;
+  const spotifyRefreshToken = user?.unsafeMetadata
+    .spotifyRefreshToken as string;
 
   useEffect(() => {
     if (isSignedIn) {
@@ -37,9 +38,10 @@ export default function Home() {
         try {
           const playlists = await getUserPlaylists(
             spotifyAccessToken,
-            refreshToken
+            spotifyRefreshToken
           );
           setPlaylists(playlists);
+          setSelectedPlaylist(playlists[0].id);
         } catch (error) {
           console.error("Failed to fetch playlists:", error);
         }
@@ -47,17 +49,11 @@ export default function Home() {
 
       fetchPlaylists();
     }
-  }, [getUserPlaylists, spotifyAccessToken, refreshToken, isSignedIn]);
+  }, [getUserPlaylists, spotifyAccessToken, spotifyRefreshToken, isSignedIn]);
 
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
   }
-
-  const handleAddToSpotify = async (songData: SongDetails) => {
-    if (selectedPlaylist) {
-      await addToSpotify(songData, spotifyAccessToken, selectedPlaylist);
-    }
-  };
 
   const startListening = async () => {
     setIsListening(true);
@@ -81,7 +77,12 @@ export default function Home() {
         if (songData && songData.result) {
           const { title, artist } = songData.result;
           console.log(`Song Recognized: ${title} by ${artist}`);
-          await handleAddToSpotify(songData.result);
+          await addToSpotify(
+            songData.result,
+            spotifyAccessToken,
+            selectedPlaylist,
+            spotifyRefreshToken
+          );
           setSongDetails({ title, artist });
           setIsSuccess(true);
           setTimeout(() => {

@@ -40,39 +40,56 @@ export const useSpotify = () => {
       throw new Error("Failed to refresh access token.");
     }
   }, []);
-
   const addToSpotify = useCallback(
     async (
       songData: SongData,
       spotifyAccessToken: string,
-      playlistId: string
+      playlistId: string,
+      spotifyRefeshToken: string
     ) => {
-      try {
+      const attemptAddTrack = async (token: string) => {
         const trackUri = await searchSpotifyTrack(
           songData.artist,
           songData.title,
-          spotifyAccessToken
+          token,
+          spotifyRefeshToken
         );
-
         if (!trackUri) {
           throw new Error("Track not found on Spotify.");
         }
-
         await axios.post(
           `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
           { uris: [trackUri] },
           {
             headers: {
-              Authorization: `Bearer ${spotifyAccessToken}`,
+              Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
           }
         );
-
         console.log("Song added to Spotify playlist!");
+      };
+
+      try {
+        await attemptAddTrack(spotifyAccessToken);
       } catch (error) {
-        console.error("Error adding song to Spotify playlist:", error);
-        throw new Error("Failed to add song to Spotify playlist.");
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            // Token expired, try refreshing
+            try {
+              const newAccessToken = await refreshAccessToken(
+                spotifyRefeshToken
+              );
+              await attemptAddTrack(newAccessToken); // Retry with the new token
+            } catch (refreshError) {
+              throw new Error("Session expired. Please log in again.");
+            }
+          } else {
+            throw new Error("Failed to add song to Spotify playlist.");
+          }
+        } else {
+          throw new Error("Failed to add song to Spotify playlist.");
+        }
       }
     },
     []
@@ -106,7 +123,6 @@ export const useSpotify = () => {
         const axiosError = error as AxiosError;
 
         if (axiosError.response?.status === 401) {
-          console.log("Access token expired. Refreshing token...");
           const newAccessToken = await refreshAccessToken(refreshToken);
 
           const retryResponse = await axios.get<SpotifyPlaylistResponse>(
@@ -123,7 +139,6 @@ export const useSpotify = () => {
             name: item.name,
           }));
         } else {
-          console.error("Error fetching playlists:", error);
           throw new Error("Failed to fetch playlists.");
         }
       }

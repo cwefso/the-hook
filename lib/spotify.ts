@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 // Types
 interface TokenResponse {
@@ -81,9 +81,9 @@ export const verifySpotifyUser = async (accessToken: string): Promise<void> => {
 };
 
 // Refresh the access token using the refresh token
-export const refreshAccessToken = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem("spotifyRefreshToken");
-
+export const refreshAccessToken = async (
+  refreshToken: string
+): Promise<string> => {
   if (!refreshToken) {
     throw new Error("No refresh token found. Starting authentication flow.");
   }
@@ -125,15 +125,13 @@ export const refreshAccessToken = async (): Promise<string> => {
   }
 };
 
-// Search for a track on Spotify
 export const searchSpotifyTrack = async (
   artist: string,
   title: string,
-  spotifyAccessToken: string
+  spotifyAccessToken: string,
+  refreshToken: string // Add refreshToken as a parameter
 ): Promise<string | null> => {
-  if (!spotifyAccessToken) {
-    throw new Error("No access token found. Starting authentication flow.");
-  }
+  console.log("Searching for track on Spotify...");
 
   try {
     const simplifiedTitle = title.replace(/\(.*\)/, "").trim();
@@ -154,8 +152,41 @@ export const searchSpotifyTrack = async (
       return response.data.tracks.items[0].uri;
     }
     return null;
-  } catch (error) {
-    console.error("Error searching for track on Spotify:", error);
-    throw error;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+
+      if (axiosError.response?.status === 401) {
+        // Token expired, refresh it
+        console.log("Access token expired. Refreshing token...");
+        const newAccessToken = await refreshAccessToken(refreshToken);
+
+        // Retry the request with the new access token
+        const retryResponse = await axios.get(
+          "https://api.spotify.com/v1/search",
+          {
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+            },
+            params: {
+              q: `track:${title.replace(/\(.*\)/, "").trim()} artist:${artist}`,
+              type: "track",
+              limit: 1,
+            },
+          }
+        );
+
+        if (retryResponse.data.tracks.items.length > 0) {
+          return retryResponse.data.tracks.items[0].uri;
+        }
+        return null;
+      } else {
+        console.error("Error searching for track on Spotify:", axiosError);
+        throw new Error("Failed to search for track on Spotify.");
+      }
+    } else {
+      console.error("Unknown error:", error);
+      throw new Error("An unknown error occurred.");
+    }
   }
 };
