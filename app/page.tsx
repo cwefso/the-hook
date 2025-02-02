@@ -120,7 +120,7 @@ export default function Home() {
           <select
             value={selectedPlaylist}
             onChange={(e) => setSelectedPlaylist(e.target.value)}
-            className="px-4 py-2 border rounded-md my-2 text-black lg:w-[25%]"
+            className="px-4 py-2 border rounded-md my-2 text-black w-[50%] lg:w-[25%]"
           >
             {playlists.map((playlist) => (
               <option key={playlist.id} value={playlist.id}>
