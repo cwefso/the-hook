@@ -1,15 +1,5 @@
 import axios from "axios";
 
-const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
-const SPOTIFY_REDIRECT_URI = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
-
-if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET || !SPOTIFY_REDIRECT_URI) {
-  throw new Error(
-    "Missing Spotify environment variables. Check your .env file."
-  );
-}
-
 // Generate the authorization URL
 export const getAuthorizationUrl = () => {
   const scopes = [
@@ -21,7 +11,7 @@ export const getAuthorizationUrl = () => {
   const params = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!, // Use your Spotify client ID
     response_type: "code",
-    redirect_uri: SPOTIFY_REDIRECT_URI, // Dynamic redirect URI
+    redirect_uri: process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI!, // Dynamic redirect URI
     scope: scopes.join(" "),
     show_dialog: "true", // Always show the login dialog
   });
@@ -41,6 +31,7 @@ export const exchangeCodeForToken = async (code: string) => {
     });
 
     const data = await response.json();
+    console.log("Token exchange response:", data);
 
     if (data.access_token) {
       localStorage.setItem("spotifyAccessToken", data.access_token);
@@ -49,7 +40,7 @@ export const exchangeCodeForToken = async (code: string) => {
       }
       return data.access_token;
     } else {
-      throw new Error("Invalid token response");
+      throw new Error("Invalid token response: " + JSON.stringify(data));
     }
   } catch (error) {
     console.error("Error exchanging code for token:", error);
@@ -72,8 +63,8 @@ export const refreshAccessToken = async () => {
       new URLSearchParams({
         grant_type: "refresh_token",
         refresh_token: refreshToken,
-        client_id: SPOTIFY_CLIENT_ID,
-        client_secret: SPOTIFY_CLIENT_SECRET,
+        client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!, // Use your Spotify client ID
+        client_secret: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET!,
       }),
       {
         headers: {

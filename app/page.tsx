@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { recognizeSong } from "../lib/audd";
 import { getAuthorizationUrl } from "../lib/spotify";
 import { ClipLoader } from "react-spinners";
@@ -22,7 +22,6 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [songDetails, setSongDetails] = useState<SongDetails | null>(null);
-
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
   const { isSignedIn, user } = useUser();
@@ -30,19 +29,26 @@ export default function Home() {
   const { addToSpotify, getUserPlaylists } = useSpotify();
 
   const spotifyAccessToken = user?.unsafeMetadata.spotifyAccessToken as string;
+  const memoizedGetUserPlaylists = useCallback(getUserPlaylists, []);
 
+  // Fetch playlists only when spotifyAccessToken changes
   useEffect(() => {
     const fetchPlaylists = async () => {
       if (spotifyAccessToken) {
-        const userPlaylists = await getUserPlaylists(spotifyAccessToken);
-        setPlaylists(userPlaylists);
-        if (userPlaylists.length > 0) {
-          setSelectedPlaylist(userPlaylists[0].id);
+        try {
+          const userPlaylists = await getUserPlaylists(spotifyAccessToken);
+          setPlaylists(userPlaylists);
+          if (userPlaylists.length > 0) {
+            setSelectedPlaylist(userPlaylists[0].id);
+          }
+        } catch (error) {
+          console.error("Failed to fetch playlists:", error);
         }
       }
     };
+
     fetchPlaylists();
-  }, [getUserPlaylists, spotifyAccessToken]);
+  }, [spotifyAccessToken, getUserPlaylists]); // Only depend on spotifyAccessToken and getUserPlaylists
 
   if (!isSignedIn) {
     return <p>Please sign in to use the app.</p>;
