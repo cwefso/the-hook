@@ -96,7 +96,7 @@ export default function Home() {
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 3000);
+      setTimeout(() => mediaRecorder.stop(), 5000);
     } catch (error) {
       console.error("Error recording audio:", error);
       console.log("Failed to record audio.");
