@@ -51,10 +51,6 @@ export default function Home() {
     }
   }, [getUserPlaylists, spotifyAccessToken, spotifyRefreshToken, isSignedIn]);
 
-  if (!isSignedIn) {
-    return <p>Please sign in to use the app.</p>;
-  }
-
   const startListening = async () => {
     setIsListening(true);
 
