@@ -1,7 +1,7 @@
 "use client"; // Ensure this is a client component
 
 import { useUser } from "@clerk/nextjs";
-import { SignInButton, UserButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -17,5 +17,5 @@ export default function AuthButtons() {
     return <LoadingSpinner />;
   }
 
-  return <>{isSignedIn ? <UserButton /> : <SignInButton />}</>;
+  return <>{isSignedIn ? <UserButton /> : <></>}</>;
 }

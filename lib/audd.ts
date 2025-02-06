@@ -2,8 +2,6 @@ if (!process.env.NEXT_PUBLIC_AUDD_API_KEY) {
   throw new Error("Missing AUDD_API_KEY environment variable");
 }
 
-const API_KEY = process.env.NEXT_PUBLIC_AUDD_API_KEY;
-
 // Type for AudD API response
 interface AudDResponse {
   status: string;
@@ -15,8 +13,11 @@ interface AudDResponse {
 }
 
 export const recognizeSong = async (
-  audioBlob: Blob
+  audioBlob: Blob,
+  auddApiKey: string
 ): Promise<AudDResponse | null> => {
+  const API_KEY = auddApiKey;
+
   if (!API_KEY) {
     console.error("AudD API key is not configured");
     return null;

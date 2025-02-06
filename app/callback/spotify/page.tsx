@@ -22,6 +22,7 @@ function SpotifyCallbackContent() {
     try {
       await user?.update({
         unsafeMetadata: {
+          ...user?.unsafeMetadata,
           spotifyAccessToken,
           spotifyRefreshToken,
         },
