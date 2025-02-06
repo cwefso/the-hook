@@ -221,12 +221,12 @@ export default function Home() {
 
       {/* Step 4: Select a Playlist */}
       {currentStep === SetupStep.SELECT_PLAYLIST && (
-        <div>
+        <div className="flex flex-col justify-center items-center">
           <h1>Select Your Playlist</h1>
           <select
             value={selectedPlaylist}
             onChange={(e) => setSelectedPlaylist(e.target.value)}
-            className="px-4 py-2 border rounded-md my-2 text-black w-[50%] lg:w-[25%]"
+            className="px-4 py-2 border rounded-md my-2 text-black "
           >
             {playlists.map((playlist) => (
               <option key={playlist.id} value={playlist.id}>
