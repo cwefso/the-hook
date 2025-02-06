@@ -41,7 +41,7 @@ const ApiKeyForm = ({ onApiKeySubmit }: ApiKeyFormProps) => {
         Save
       </button>
       <p className="mt-3 text-gray-600 text-sm">
-        Don't have an API key?{" "}
+        Don&apos;t have an API key?{" "}
         <a
           href="https://audd.io/"
           target="_blank"
